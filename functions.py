@@ -25,6 +25,7 @@ def restrict_dataframe(df, start_range, end_range):
     return df
 
 
+
 def ajouter_espace_milliers(chaine):
     # Chercher la position du point décimal
     point_decimal = chaine.find('.')
@@ -88,6 +89,10 @@ def read_css_file(file_path):
     """Read the contents of a CSS file."""
     with open(file_path) as css_file:
         return css_file.read()
+
+def restrict_by_day(df,first_day,last_day):
+    df = df[(df['day'] >= pd.Timestamp(first_day)) & (df['day'] <= pd.Timestamp(last_day))]
+    return df
 
 
 def convert_image_to_base64(image):

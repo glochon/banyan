@@ -43,9 +43,9 @@ st.write('<style>div.block-container{padding-top:1.5rem;}</style>', unsafe_allow
 ########### Sidebar
 st.sidebar.title("Navigation")
 # Your sidebar radio buttons
-navigation = st.sidebar.radio("Go to", ["Overview","Recommendations"])
+navigation = st.sidebar.radio("Go to", ["Overview", "Recommandations & Simulations"])
 
-for i in range(10): #avant c'était 30
+for i in range(10):  # avant c'était 30
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 if "edit_expander" not in st.session_state:
@@ -55,17 +55,17 @@ edit_button_container = st.sidebar.markdown(
     '<div id="edit-button-container"></div>',
     unsafe_allow_html=True
 )
-df,first_day,last_day = load_df()
+df, first_day, last_day = load_df()
 st.write('')
 df, df_sum_by_day, dfSumByDevice = restrict_all_dataframes(df)
-#df_video_context, df_banner_context = get_df_context(df)
+# df_video_context, df_banner_context = get_df_context(df)
 col1, col2 = st.columns([4, 1])
-col1.write("## Hi Guillaume, welcome back!")
+col1.write("## Hi Thibault, welcome back!")
 col2.write('')
 col2.write('')
 col2.write('')
 now_minus_1 = datetime.datetime.now() - timedelta(hours=1) - timedelta(minutes=12)
-col2.markdown("###### " + str("Last update : "+str(now_minus_1.strftime("%Y-%m-%d %H:%M:%S"))))
+col2.markdown("###### " + str("Last update : " + str(now_minus_1.strftime("%Y-%m-%d %H:%M:%S"))))
 st.write('')
 st.write('')
 st.write(
@@ -80,7 +80,6 @@ deal = col1.selectbox("Select a deal", get_deals_list(df))
 df = restrict_by_deal(df, deal)
 col2.write('### Date')
 start_range, end_range = render_calendar(col2, first_day, last_day)
-# TODO ICI RENDER LOAD df.csv en fonction de la marque, mais restrict en fonction de la durée
 col3.markdown('### Media Context', unsafe_allow_html=True)
 media_context = col3.selectbox("Select a media context", ["All", "Video", "Banner"])
 df = restict_by_media_context(df, media_context)
@@ -99,11 +98,14 @@ if col5.button("Last Month"):
     start_range, end_range = last_day - timedelta(days=30), last_day
 if col6.button("All Time"):
     start_range, end_range = first_day, last_day
-
+df = restrict_by_day(df, start_range, end_range)
 ############ OVERVIEW
 if navigation == "Overview":
     st.markdown("""---""")
-    st.markdown(str('## Lifetime overview of : ' + "Nike"))
+    col1,col2 = st.columns([5,1])
+    col1.markdown(str('## Overview of : ' + "SFR"))
+    if col2.button(label=':green[Offset my emissions !]', use_container_width=True):
+        navigation = "Offset my emissions"
     st.write("")
     st.write("")
     ######## Setting KPIs
@@ -261,7 +263,7 @@ if navigation == "Overview":
     st.write("### Conversion Rates KPIs")
     st.write(" ")
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric(label="CO2e Per Impression", value=human_formatCO2(round(co2_total /imps, 2)) + "CO2e",
+    col1.metric(label="CO2e Per Impression", value=human_formatCO2(round(co2_total / imps, 2)) + "CO2e",
                 help="Average quantity of CO2e emitted by an impression")
     col2.metric(label="CO2e Per Viewed Impression", value=human_formatCO2(round(co2_total / viewed_imps, 2)) + "CO2e",
                 help="Average quantity of CO2e emitted by an viewed impression")
@@ -279,7 +281,8 @@ if navigation == "Overview":
     }
     st.write(" ")
     selected_data = st.selectbox("Select data to display:",
-                                 options=["gCO2 Per Impression","gCO2 Per Viewed Impression", "gCO2 Per Click","gCO2 Per $ Spent"])
+                                 options=["gCO2 Per Impression", "gCO2 Per Viewed Impression", "gCO2 Per Click",
+                                          "gCO2 Per $ Spent"])
 
     # Get the selected column name and label
     column_name, y_label = data_options[selected_data]
@@ -292,7 +295,7 @@ if navigation == "Overview":
         title=f"Daily {selected_data}"
     )
     st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
-    st.markdown("""---""")
+    s='''st.markdown("""---""")
     st.write("### Campaigns Overview")
     dfBrandAll = df.groupby(['line_item']).sum(numeric_only=True).reset_index()
     dfBrandAll = dfBrandAll.sort_values(by=['co2total'], ascending=False)
@@ -302,7 +305,7 @@ if navigation == "Overview":
     other_imps = dfBrandAll.iloc[10:]['imps'].sum()
     other_clicks = dfBrandAll.iloc[10:]['clicks'].sum()
     other_cost = dfBrandAll.iloc[10:]['spend'].sum()
-    st.dataframe(top_brands, use_container_width=True)
+    st.dataframe(top_brands, use_container_width=True)'''
     st.markdown("""---""")
     # Use the campaign name from the session state
     st.write("### CO2e equivalence to real life")
@@ -324,10 +327,14 @@ if navigation == "Overview":
     st.write(" ")
     st.write(" ")
 
+if navigation == "Offset my emissions":
+    print("cool!")
+
     ########### Campaign Performance Analysis
 
 if navigation == "Campaign Performance Analysis":
-    imps,viewed_imps,clicks,co2total=df["imps"].sum(),df["viewed_imps"].sum(),df["clicks"].sum(),df["co2total"].sum()
+    imps, viewed_imps, clicks, co2total = df["imps"].sum(), df["viewed_imps"].sum(), df["clicks"].sum(), df[
+        "co2total"].sum()
     st.write("---")
     st.write("### Volumes")
     col1, col2, col3 = st.columns(3)
@@ -351,12 +358,12 @@ if navigation == "Campaign Performance Analysis":
     }
     st.write("" "")
     selected_data = st.selectbox("Select data to display:",
-                                 options=["Impressions", "Viewable Impressions", "Clicks","CO2e Emissions",
+                                 options=["Impressions", "Viewable Impressions", "Clicks", "CO2e Emissions",
                                           "Budget Spent ($)", "Viewability Rate (%)"])
 
     # Get the selected column name and label
     column_name, y_label = data_options[selected_data]
-    df_sum_by_day["viewability_rate_calculated"] = df_sum_by_day["viewed_imps"]/df_sum_by_day["imps"]
+    df_sum_by_day["viewability_rate_calculated"] = df_sum_by_day["viewed_imps"] / df_sum_by_day["imps"]
     # Create the plot
     fig2 = px.line(
         df_sum_by_day.round(2),
@@ -470,8 +477,7 @@ if navigation == "Campaign Performance Analysis":
 
     # Affichage du DataFrame dans Streamlit
     st.dataframe(df_country.reset_index(drop=True), use_container_width=True)
-if navigation == "Recommandations":
-
+if navigation == "Recommandations & Simulations":
     st.write('')
     st.write('')
     st.title('Recommandations')
