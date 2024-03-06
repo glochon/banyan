@@ -9,6 +9,7 @@ import datetime
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
+import webbrowser
 
 
 def human_format(num):
@@ -51,9 +52,8 @@ def restrict_all_dataframes(df):
     end_range = df['day'].max()
     df = restrict_dataframe(df, start_range, end_range)
     df_sum_by_day = render_df_sum_by_day(df)
-    dfSumByDevice = render_df_sum_by_device(df)
 
-    return df, df_sum_by_day, dfSumByDevice
+    return df, df_sum_by_day
 
 
 def human_formatCO2(co2):
@@ -90,6 +90,13 @@ def read_css_file(file_path):
     with open(file_path) as css_file:
         return css_file.read()
 
+page_ouverte = False
+def open_webpage():
+    """Ouvre la page web dans un nouvel onglet."""
+    global page_ouverte
+    if not page_ouverte:
+        webbrowser.open_new_tab("https://tree-nation.com/plant/myself")
+        page_ouverte = True
 def restrict_by_day(df,first_day,last_day):
     df = df[(df['day'] >= pd.Timestamp(first_day)) & (df['day'] <= pd.Timestamp(last_day))]
     return df
@@ -137,15 +144,6 @@ def render_df_sum_by_day(df):
     return df_sum_by_day
 
 
-## Create a dataframe with the sum of co2 per device
-
-def render_df_sum_by_device(df):
-    df_sum_by_device = df.groupby('device').sum(numeric_only=True)
-    df_sum_by_device.reset_index(inplace=True)
-    df_sum_by_device = df_sum_by_device.sort_values(by='co2total', ascending=False)
-    return df_sum_by_device
-
-
 def get_deals_list(df):
     deals_list = df['line_item'].unique()
     deals_list = ["All"] + list(deals_list)
@@ -164,16 +162,13 @@ def get_each_country_co2(df):
 
 
 def restrict_by_deal(df, deal_name):
-    if deal_name == "Demo Campaign":
-        return df
     if deal_name == 'All':
         return df
     else:
-        df = df[df['curated_deal'] == deal_name]
+        df = df[df['line_item'] == deal_name]
         # restrict the df.csv on only the last week
         today = datetime.datetime.today()
         last_week = today - datetime.timedelta(days=7)
-        df = df[(df['day'] >= pd.Timestamp(last_week)) & (df['day'] <= pd.Timestamp(today))]
     return df
 
 
@@ -317,66 +312,9 @@ def per_media_context(df):
     return dfVideo, dfBanner
 
 
-def co2_sri(df, dfDB, gm):
-    dict_carbon_intensity_country = {'FR': 55, 'ES': 90, 'DE': 412, 'GB': 133, 'IT': 371, 'BE': 164}
-
-    # Intensité carbone de base pour la comparaison (en gCO2/kWh)
-    base_intensity = 55
-
-    # Calcul du facteur d'intensité carbone pour chaque entrée du DataFrame
-    df['CarbonIntensityFactor'] = df['geo_country'].map(dict_carbon_intensity_country).fillna(
-        base_intensity) / base_intensity
-
-    # Constantes
-    VIDEO_SIZE_MB = 2.4
-    BANNER_SIZE_MB = 0.7
-    device_media_combinations = [
-        (('mobile phones',), 'video', 0.0095 * 8),
-        (('mobile phones',), 'banner', 0.00136),
-        (('desktops & laptops',), 'video', 0.00136 * 8),
-        (('desktops & laptops',), 'banner', 0.00136),
-        (('tablets',), 'video', 0.00136 * 8),
-        (('tablets',), 'banner', 0.00136),
-        (('media players', 'set top box', 'game consoles'), 'video', 0.01007 * 8),
-        (('media players', 'set top box', 'game consoles'), 'banner', 0.01007)
-    ]
-
-    conditions = [(df['device'].isin(devices)) & (df['media_type'] == media_type) for devices, media_type, _ in
-                  device_media_combinations]
-    values = [value for _, _, value in device_media_combinations]
-
-    df['device_co2'] = np.select(conditions, values) * df["imps"]
-
-    banner_mask = (df["media_type"] == "banner").astype(int)
-    video_mask = (df["media_type"] == "video").astype(int)
-
-    df["sri_co2_ad_tech"] = df["imps"] * ((0.27746 * banner_mask) + (0.9713 * video_mask))
-    df["data_center_co2"] = df["media_type"].replace({"banner": BANNER_SIZE_MB, "video": VIDEO_SIZE_MB}).astype(
-        float) * 0.005206 * df["imps"]
-    df["network_co2"] = df["media_type"].replace({"banner": BANNER_SIZE_MB, "video": VIDEO_SIZE_MB}).astype(
-        float) * 0.17 * df["imps"]
-
-    # Ici, 60% du co2 de la transmission est affecté par l'intensité carbone
-    df["network_co2"] *= (1 + 0.6 * (df['CarbonIntensityFactor'] - 1))
-
-    if gm:
-        df = df.merge(dfDB[['domain', 'desktop_co2']], how='left', left_on='site_domain', right_on='domain')
-        df["desktop_co2"] = df["desktop_co2"].fillna(0.3)
-        df["desktop_co2"] = df["desktop_co2"] / 60
-        df["desktop_co2"] = df["desktop_co2"] * df["media_type"].replace({"banner": 1, "video": 8}) * df["imps"]
-        df["device_co2"] += df["desktop_co2"]
-        df = df.drop(columns=['desktop_co2'])
-
-    # Ici, 20% du co2 du terminal est affecté par l'intensité carbone
-    df["device_co2"] *= (1 + 0.2 * (df['CarbonIntensityFactor'] - 1))
-
-    df["co2total"] = df["sri_co2_ad_tech"] + df["data_center_co2"] + df["network_co2"] + df["device_co2"]
-    df["media_type"] = df["media_type"].astype('category')
-    return df
-
 
 def load_df():
-    df = pd.read_csv("df.csv", sep="|")
+    df = pd.read_csv("sfr.csv")
     df['day'] = pd.to_datetime(df['day'], format='%Y-%m-%d')
     first_day = df['day'].min()
     last_day = df['day'].max()
