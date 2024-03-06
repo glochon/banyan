@@ -1,0 +1,6 @@
+day|line_item|device|media_type|imps|clicks|spend|co2total|CO2AdTech|CO2Datacenter|CO2Transmission|CO2Device|viewed_imps
+2024-01-01|001|Mobile|Display|10000|500|1000|50|10|20|5|15|30
+2024-01-01|002|Desktop|Video|5000|200|800|40|8|15|4|13|30
+2024-01-02|001|Tablet|Display|8000|400|1200|60|12|22|6|20|30
+2024-01-02|002|Mobile|Video|7000|300|900|45|9|18|5|13|30
+2024-01-03|003|Desktop|Display|12000|600|1500|70|14|25|7|24|30
