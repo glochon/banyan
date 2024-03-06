@@ -1,0 +1,6 @@
+emoji~=2.8.0
+streamlit~=1.27.2
+Pillow~=10.0.1
+pandas~=2.0.3
+plotly~=5.17.0
+numpy~=1.25.0
