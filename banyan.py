@@ -46,7 +46,7 @@ st.write('<style>div.block-container{padding-top:1.5rem;}</style>', unsafe_allow
 st.sidebar.title("Navigation")
 # Your sidebar radio buttons
 navigation = st.sidebar.radio("Go to", ["Overview"])
-for i in range(10):  # avant c'était 30
+for i in range(10):
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 if "edit_expander" not in st.session_state:
     st.session_state.edit_expander = False
@@ -108,7 +108,7 @@ if navigation == "Overview":
     }
     </style>""", unsafe_allow_html=True)
 
-    col2.button(":white[Offset my emissions !]", use_container_width=True, on_click=open_webpage)
+    col2.button(" Offset my emissions !", use_container_width=True, on_click=open_webpage)
     # if col2.button(label=':green[Offset my emissions !]', use_container_width=True):
     #   navigation = "Offset my emissions"
     st.write("")
@@ -237,19 +237,24 @@ if navigation == "Overview":
         "<h4 class='centered-header'>" + str(DevicePurcent) + " % of the impact" + "</h4>",
         unsafe_allow_html=True)
     colENERGY.write('### Energy Breakdown')
-    share_nuclear = 24.59
-    share_renewables = 42.74
-    share_fossil = 32.67
-    renewables_color = (39, 120, 81)
-    nuclear_color = (37, 37, 135)
-    fossil_color = (255, 205, 76)
-    # create a plotly streamlit pie chart
+
+    share_nuclear = 24
+    share_renewables = 42
+    share_fossil = 32
+    share_low_carbon = 1 - share_fossil
+
+    # Define the new theme-matching colors
+    renewables_color = (40, 167,69)
+    nuclear_color = (74, 144, 226)
+    fossil_color = (176, 92, 30)
+
     fig = go.Figure(data=[
         go.Pie(labels=['Renewables', 'Nuclear', 'Fossil'], values=[share_renewables, share_nuclear, share_fossil])])
     fig.update_traces(hoverinfo='label+percent', textinfo='label+percent', textfont_size=17,
                       marker=dict(colors=[f'rgb{renewables_color}', f'rgb{nuclear_color}', f'rgb{fossil_color}']))
     fig.update_layout(showlegend=False, margin=dict(l=0, r=0, t=17, b=0), height=330, width=320)
     colENERGY.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
 
     st.markdown("""---""")
     st.write("### Conversion Rates KPIs")
